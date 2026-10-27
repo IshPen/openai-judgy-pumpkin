@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Judgy Pumpkin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik+Wet+Paint&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a midnight roast stage. One spotlit pumpkin owns the screen, comic bubbles pop off it,
+   a control dock sits at the floor, and the transcript hangs at the side like a heckler's notepad.
+   Deliberately dark-only. */
+:root{
+  color-scheme: dark;
+  --void:#0a0610;
+  --plum:#1a0f22;
+  --plum-2:#251731;
+  --line:#3b2649;
+  --ink:#f6ecdf;
+  --muted:#a894b6;
+  --ember:#ff7a18;
+  --ember-hot:#ffc542;
+  --hex:#a76bff;          /* violet rim light */
+  --paper:#fff4e2;        /* comic bubble paper */
+  --paper-ink:#160a12;
+  --bad:#ff6b7a;
+  --logo:"Rubik Wet Paint", "Bricolage Grotesque", Impact, sans-serif;
+  --body:"Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{
+  background:var(--void);
+  color:var(--ink);
+  font:16px/1.5 var(--body);
+  overflow-x:hidden;
+}
+.app{
+  min-height:100%;
+  display:grid;grid-template-columns:minmax(0,1fr) 380px;
+}
+@media (max-width:980px){.app{grid-template-columns:1fr}}
+
+/* ---------- Stage ---------- */
+.stage{
+  position:relative;overflow:hidden;min-height:640px;height:100vh;
+  background:
+    radial-gradient(420px 520px at 50% 34%, rgba(255,122,24,.16), transparent 70%),
+    radial-gradient(900px 500px at 50% 110%, rgba(167,107,255,.18), transparent 70%),
+    linear-gradient(180deg,#120a1a 0%, var(--void) 70%);
+}
+@media (max-width:980px){.stage{height:auto;min-height:0;aspect-ratio:auto}}
+.spot{
+  position:absolute;left:50%;top:-10%;width:70%;height:95%;transform:translateX(-50%);
+  background:conic-gradient(from 180deg at 50% 0%, transparent 160deg, rgba(255,214,150,.07) 172deg, rgba(255,214,150,.12) 180deg, rgba(255,214,150,.07) 188deg, transparent 200deg);
+  pointer-events:none;filter:blur(4px)
+}
+.fog{position:absolute;inset:auto -20% 0 -20%;height:42%;pointer-events:none;opacity:.55;
+  background:
+    radial-gradient(40% 60% at 20% 80%, rgba(167,107,255,.25), transparent 70%),
+    radial-gradient(35% 55% at 70% 85%, rgba(255,122,24,.12), transparent 70%),
+    radial-gradient(45% 50% at 50% 100%, rgba(246,236,223,.10), transparent 70%);
+  animation:drift 18s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translateX(8%)}}
+#three{position:absolute;inset:0;width:100%;height:100%;display:block}
+@media (max-width:980px){
+  .stage{display:grid;grid-template-rows:auto 420px auto auto}
+  #three{position:relative;inset:auto;height:420px;grid-row:2}
+}
+
+.marquee{
+  position:absolute;z-index:3;top:22px;left:max(24px, env(safe-area-inset-left, 0px));right:24px;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap
+}
+@media (max-width:980px){.marquee{position:relative;top:auto;left:auto;right:auto;padding:20px max(16px, env(safe-area-inset-left, 0px)) 0}}
+.logo{font-family:var(--logo);font-size:clamp(46px,6.5vw,92px);line-height:.85;margin:0;color:var(--ember);
+  text-shadow:0 0 28px rgba(255,122,24,.45), 0 4px 0 #6b2700}
+.tag{font:700 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:12px}
+.onair{display:flex;align-items:center;gap:8px;font:700 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
+  padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:rgba(10,6,16,.6);backdrop-filter:blur(6px)}
+.onair i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+body.thinking .onair i{background:var(--hex);animation:blink .5s infinite alternate}
+body.talking .onair i{background:var(--ember);box-shadow:0 0 10px var(--ember)}
+@keyframes blink{to{opacity:.25}}
+
+/* Comic speech bubble */
+.bubble-wrap{position:absolute;z-index:4;left:calc(50% + 140px);top:20%;width:min(360px, calc(50% - 170px))}
+@media (max-width:1200px){.bubble-wrap{left:calc(50% + 70px);width:min(340px, calc(50% - 90px))}}
+@media (max-width:980px){.bubble-wrap{position:relative;left:auto;top:auto;width:auto;grid-row:3;margin:-30px max(16px, env(safe-area-inset-left, 0px)) 8px}}
+.bubble{
+  position:relative;background:var(--paper);color:var(--paper-ink);
+  border:3px solid var(--paper-ink);border-radius:26px 26px 26px 8px;
+  padding:16px 20px;font:800 clamp(17px,1.6vw,21px)/1.3 var(--body);
+  box-shadow:7px 7px 0 var(--ember);transform:rotate(-1.5deg);
+  white-space:pre-line;overflow-wrap:anywhere;max-height:52vh;overflow-y:auto
+}
+.bubble::after{
+  content:"";position:absolute;left:-22px;bottom:18px;width:34px;height:26px;background:var(--paper);
+  border-left:3px solid var(--paper-ink);border-bottom:3px solid var(--paper-ink);
+  clip-path:polygon(0 100%, 100% 0, 100% 100%);transform:skewX(-20deg)
+}
+@media (max-width:980px){.bubble{max-height:none}.bubble::after{display:none}}
+.bubble .who{display:block;font:700 10px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:#a3410a;margin-bottom:8px}
+.bubble.pop{animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:rotate(-6deg) scale(.6);opacity:0}to{transform:rotate(-1.5deg) scale(1);opacity:1}}
+.bubble.upgrade{box-shadow:7px 7px 0 var(--hex)}
+.caret{display:inline-block;width:.5em;height:1em;background:var(--paper-ink);vertical-align:-2px;margin-left:2px;animation:blink .5s infinite alternate}
+.bubble:not(.typing) .caret{display:none}
+
+/* Thought bubble while judging */
+.thought{display:flex;align-items:center;gap:8px;background:var(--paper);color:var(--paper-ink);border:3px solid var(--paper-ink);border-radius:999px;padding:12px 18px;width:max-content;font:800 18px var(--body);box-shadow:6px 6px 0 var(--hex)}
+.thought span{width:9px;height:9px;border-radius:50%;background:var(--paper-ink);animation:bob .9s infinite ease-in-out}
+.thought span:nth-child(2){animation-delay:.15s}.thought span:nth-child(3){animation-delay:.3s}
+@keyframes bob{50%{transform:translateY(-6px)}}
+.puffs{position:relative;height:30px}
+.puffs i{position:absolute;border:3px solid var(--paper-ink);background:var(--paper);border-radius:50%}
+.puffs i:nth-child(1){width:18px;height:18px;left:-6px;top:6px}
+.puffs i:nth-child(2){width:10px;height:10px;left:-22px;top:22px}
+
+/* Control dock */
+.dock{
+  position:absolute;z-index:5;left:50%;bottom:22px;transform:translateX(-50%);
+  width:min(760px, calc(100% - 32px));
+  display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:stretch;
+  background:rgba(26,15,34,.78);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:22px;padding:12px
+}
+@media (max-width:980px){.dock{position:relative;left:auto;bottom:auto;transform:none;grid-row:4;width:auto;margin:8px max(16px, env(safe-area-inset-left, 0px)) 20px}}
+@media (max-width:560px){.dock{grid-template-columns:1fr}}
+.cam{position:relative;width:132px;aspect-ratio:4/3;max-width:100%;border-radius:14px;overflow:hidden;background:#000;border:1px solid var(--line);cursor:pointer;padding:0}
+@media (max-width:560px){.cam{width:100%;aspect-ratio:auto;height:120px}}
+.cam video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
+.cam .off{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font:700 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px}
+.cam .rec{position:absolute;left:8px;top:8px;width:8px;height:8px;border-radius:50%;background:#ff3b52;box-shadow:0 0 8px #ff3b52}
+.cam:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+.controls{display:grid;gap:10px;min-width:0}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{all:unset;box-sizing:border-box;cursor:pointer;padding:12px 16px;border-radius:14px;font:700 15px/1.1 var(--body);text-align:center;
+  background:var(--plum-2);color:var(--ink);border:1px solid var(--line);transition:transform .12s, background .12s}
+.btn:hover{transform:translateY(-1px);border-color:var(--muted)}
+.btn:active{transform:translateY(1px)}
+.btn:focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+.btn.roast{flex:1.4;background:var(--ember);color:#200c00;border-color:#ffb066;font-size:18px;box-shadow:0 4px 0 #8a3500, 0 0 24px rgba(255,122,24,.35)}
+.btn.roast:hover{background:var(--ember-hot)}
+.btn.upgrade{flex:1;background:transparent;border:2px solid var(--hex);color:#e1ccff}
+.btn.upgrade:hover{background:rgba(167,107,255,.15)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+form.talk{display:flex;gap:8px}
+input[type=text],input[type=password]{
+  flex:1;min-width:0;background:rgba(10,6,16,.7);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font:500 15px var(--body)
+}
+input:focus{outline:2px solid var(--ember);outline-offset:1px}
+
+.sound{grid-column:1/-1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  background:linear-gradient(90deg, rgba(255,122,24,.18), rgba(167,107,255,.14));border:1px solid rgba(255,122,24,.45);border-radius:14px;padding:9px 12px}
+.sound .wave{display:flex;gap:3px;align-items:flex-end;height:18px}
+.sound .wave i{width:4px;border-radius:2px;background:var(--ember-hot);animation:eq .8s infinite ease-in-out alternate}
+.sound .wave i:nth-child(1){height:40%}.sound .wave i:nth-child(2){height:100%;animation-delay:.2s}.sound .wave i:nth-child(3){height:65%;animation-delay:.4s}.sound .wave i:nth-child(4){height:85%;animation-delay:.1s}
+@keyframes eq{to{transform:scaleY(.35)}}
+.sound p{margin:0;flex:1;min-width:180px;font-weight:700}
+.sound p span{display:block;font-weight:500;font-size:13px;color:var(--muted)}
+.sound .btn{padding:8px 12px;font-size:13px}
+.sound.muted{background:var(--plum-2);border-color:var(--line)}
+.sound.muted .wave i{animation:none;transform:scaleY(.25);background:var(--muted)}
+
+/* ---------- Transcript ---------- */
+.side{background:var(--plum);border-left:1px solid var(--line);display:grid;grid-template-rows:auto 1fr auto;height:100vh;position:sticky;top:0;min-width:0}
+@media (max-width:980px){.side{height:560px;position:relative;border-left:0;border-top:1px solid var(--line)}}
+.side-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:20px max(18px, env(safe-area-inset-right, 0px)) 14px 18px;border-bottom:1px solid var(--line)}
+.side-head h2{margin:0;font:800 22px var(--body)}
+.side-head .label{font:700 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.log{overflow-y:auto;padding:16px max(18px, env(safe-area-inset-right, 0px)) 16px 18px;display:flex;flex-direction:column;gap:12px;min-height:0}
+.msg{max-width:88%;padding:10px 13px;border-radius:16px;white-space:pre-line;overflow-wrap:anywhere;font-size:15px}
+.msg.pumpkin{align-self:flex-start;background:var(--paper);color:var(--paper-ink);border:2px solid var(--paper-ink);border-bottom-left-radius:4px;font-weight:700;box-shadow:4px 4px 0 var(--ember)}
+.msg.pumpkin.upgrade{box-shadow:4px 4px 0 var(--hex)}
+.msg.user{align-self:flex-end;background:var(--plum-2);border:1px solid var(--line);border-bottom-right-radius:4px}
+.msg.user img{display:block;width:150px;max-width:100%;border-radius:10px;margin-bottom:6px}
+.msg.system{align-self:center;max-width:100%;text-align:center;font:500 12px/1.5 var(--mono);color:var(--muted);padding:2px 4px}
+.msg.error{color:var(--bad)}
+.example{align-self:center;font:700 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:6px 9px;border:1px dashed var(--line);border-radius:8px}
+
+details.settings{border-top:1px solid var(--line);padding:12px max(18px, env(safe-area-inset-right, 0px)) 16px 18px;font-size:14px}
+details.settings summary{cursor:pointer;color:var(--muted);font-weight:700}
+details.settings[open]>div{display:grid;gap:8px;margin-top:12px}
+.label{font:700 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.toggle{display:flex;gap:8px;align-items:center}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <section class="stage">
+    <div class="spot"></div>
+    <canvas id="three" aria-label="A 3D carved pumpkin with a judgmental face"></canvas>
+    <div class="fog"></div>
+
+    <header class="marquee">
+      <div>
+        <h1 class="logo">Judgy Pumpkin</h1>
+        <div class="tag">Step into the light. Get judged.</div>
+      </div>
+      <div class="onair"><i></i><span id="status-text">Watching you</span></div>
+    </header>
+
+    <div class="bubble-wrap" aria-live="polite">
+      <div class="puffs" id="puffs" hidden><i></i><i></i></div>
+      <div class="thought" id="thought" hidden><span></span><span></span><span></span></div>
+      <div class="bubble" id="bubble"><span class="who" id="bubble-who">Judgy Pumpkin</span><span id="bubble-text">Oh. Another contestant. Step closer so I can see what you've done to yourself.</span><span class="caret"></span></div>
+    </div>
+
+    <div class="dock">
+      <div class="sound" id="sound">
+        <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <p id="sound-text">Turn your volume up! <span>This pumpkin roasts you out loud.</span></p>
+        <button class="btn" type="button" id="sound-toggle">Mute pumpkin</button>
+        <button class="btn" type="button" id="sound-ok">Got it</button>
+      </div>
+      <button class="cam" id="cam-btn" type="button" aria-label="Turn camera on or off">
+        <video id="video" autoplay playsinline muted hidden></video>
+        <span class="rec" id="rec" hidden></span>
+        <span class="off" id="cam-off">Tap to turn on camera</span>
+      </button>
+      <div class="controls">
+        <div class="actions">
+          <button class="btn roast" id="roast-btn" type="button">Roast my costume</button>
+          <button class="btn upgrade" id="upgrade-btn" type="button">Suggest a better costume</button>
+        </div>
+        <form class="talk" id="form">
+          <input type="text" id="input" placeholder="Talk back, or describe your costume…" autocomplete="off">
+          <button class="btn" type="submit">Send</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div class="side-head">
+      <h2>Transcript</h2>
+      <span class="label">On the record</span>
+    </div>
+    <div class="log" id="log">
+      <span class="example">Example roast</span>
+      <div class="msg user">Roast my costume. I'm a vampire.</div>
+      <div class="msg pumpkin">A vampire. Bold of you to pick the one monster everyone has done since 1897. The cape says Dracula, the posture says "forgot it was Halloween until 6pm."</div>
+      <div class="msg user">Okay then what should I be?</div>
+      <div class="msg pumpkin upgrade">Fine, I'll save you.
+- Vampire dentist: keep the cape, add a lab coat and giant floss.
+- Sleepy vampire: cape plus fuzzy slippers and a "not a morning person" mug.
+- Vampire influencer: cape, ring light, and a sign saying "no reflection, no selfies."</div>
+    </div>
+    <details class="settings">
+      <summary>Settings</summary>
+      <div>
+        <label class="label" for="key">API key (free Google Gemini key, or OpenAI)</label>
+        <input type="password" id="key" placeholder="AIza... or sk-..." autocomplete="off">
+        <p class="hint">Get a free Gemini key at aistudio.google.com. It stays in this browser only. Without a key, the pumpkin runs in demo mode with canned lines.</p>
+        <label class="label" for="model">Model (leave blank to pick automatically)</label>
+        <input type="text" id="model" value="" placeholder="auto">
+        <label class="toggle"><input type="checkbox" id="voice" checked> Pumpkin speaks out loud</label>
+        <button class="btn" type="button" id="clear">Next contestant</button>
+      </div>
+    </details>
+  </aside>
+</div>
+
+<canvas id="snap" hidden></canvas>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* =========================================================
+   3D PUMPKIN
+   The face is painted onto two canvas textures (rind color + glow),
+   redrawn each frame so the eyes and mouth can move.
+   To match a real carving, edit the shapes in drawFace().
+   ========================================================= */
+const W = 1024, H = 512, S = W / 2048;      // face shapes are designed on a 2048x1024 grid
+const colorCv = document.createElement("canvas"); colorCv.width = W; colorCv.height = H;
+const glowCv  = document.createElement("canvas"); glowCv.width = W;  glowCv.height = H;
+const rindCv  = document.createElement("canvas"); rindCv.width = W;  rindCv.height = H;
+const cctx = colorCv.getContext("2d"), gctx = glowCv.getContext("2d");
+
+(function paintRind(){
+  const r = rindCv.getContext("2d");
+  const g = r.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,"#9c3a08"); g.addColorStop(.18,"#d9590f"); g.addColorStop(.5,"#f2761c"); g.addColorStop(.85,"#c94c0b"); g.addColorStop(1,"#7a2b04");
+  r.fillStyle = g; r.fillRect(0,0,W,H);
+  for (let i = 0; i < 10; i++){                              // rib shadows
+    const x = (i/10)*W;
+    const rg = r.createLinearGradient(x-34,0,x+34,0);
+    rg.addColorStop(0,"rgba(80,25,0,0)"); rg.addColorStop(.5,"rgba(80,25,0,.45)"); rg.addColorStop(1,"rgba(80,25,0,0)");
+    r.fillStyle = rg; r.fillRect(x-34,0,68,H);
+  }
+  for (let i = 0; i < 900; i++){                             // skin speckle
+    r.fillStyle = Math.random() < .5 ? "rgba(255,190,110,.10)" : "rgba(90,30,0,.12)";
+    r.fillRect(Math.random()*W, Math.random()*H, 1.5, 3 + Math.random()*5);
+  }
+})();
+
+const face = { mouth: 0, pupilX: .6, pupilY: 0, brow: 0, lid: 0 };
+
+function carve(pathFn){
+  // rind: dark cut wall, then glowing inner flesh
+  cctx.save(); cctx.scale(S,S);
+  cctx.beginPath(); pathFn(cctx);
+  cctx.lineJoin = "round"; cctx.lineWidth = 18; cctx.strokeStyle = "#6e2604"; cctx.stroke();
+  cctx.fillStyle = "#ffd36a"; cctx.fill();
+  cctx.restore();
+  // glow
+  gctx.save(); gctx.scale(S,S);
+  gctx.beginPath(); pathFn(gctx);
+  gctx.shadowColor = "#ff8a1f"; gctx.shadowBlur = 40; gctx.fillStyle = "#ffbe4a"; gctx.fill();
+  gctx.shadowBlur = 0; gctx.fillStyle = "#fff0b0"; gctx.fill();
+  gctx.restore();
+}
+function shade(pathFn, color){
+  [cctx, gctx].forEach(c => { c.save(); c.scale(S,S); c.beginPath(); pathFn(c); c.fillStyle = color; c.fill(); c.restore(); });
+}
+
+function drawFace(){
+  const cx = 512, cy = 500;              // face center (u = 0.25 faces the camera)
+  cctx.drawImage(rindCv, 0, 0);
+  gctx.fillStyle = "#000"; gctx.fillRect(0,0,W,H);
+
+  const b = face.brow * 18, lid = face.lid * 14;
+
+  // Brows: left one low and angry, right one cocked up in disbelief
+  carve(c => { c.moveTo(cx-230, cy-140); c.lineTo(cx-60, cy-100+b*.3); c.lineTo(cx-70, cy-74+b*.3); c.lineTo(cx-226, cy-110); c.closePath(); });
+  carve(c => { c.moveTo(cx+235, cy-178-b); c.quadraticCurveTo(cx+150, cy-190-b*1.4, cx+62, cy-112-b*.5); c.lineTo(cx+72, cy-88-b*.5); c.quadraticCurveTo(cx+150, cy-160-b*1.4, cx+230, cy-148-b); c.closePath(); });
+
+  // Half-lidded eyes; the lid lifts a bit when it gets excited
+  const eyeL = c => { c.moveTo(cx-205, cy-60-lid); c.lineTo(cx-70, cy-46-lid); c.quadraticCurveTo(cx-135, cy+14, cx-205, cy-60-lid); c.closePath(); };
+  const eyeR = c => { c.moveTo(cx+205, cy-70-lid*1.4); c.lineTo(cx+70, cy-50-lid*1.4); c.quadraticCurveTo(cx+135, cy+16, cx+205, cy-70-lid*1.4); c.closePath(); };
+  carve(eyeL); carve(eyeR);
+  [[eyeL, cx-135],[eyeR, cx+135]].forEach(([eye, ex]) => {
+    [cctx, gctx].forEach(c => {
+      c.save(); c.scale(S,S); c.beginPath(); eye(c); c.clip();
+      c.beginPath(); c.arc(ex + face.pupilX*40, cy-30 + face.pupilY*7, 19, 0, Math.PI*2); c.fillStyle = "#1e0b02"; c.fill();
+      c.restore();
+    });
+  });
+
+  // Nose
+  carve(c => { c.moveTo(cx+4, cy-4); c.lineTo(cx-26, cy+38); c.lineTo(cx+22, cy+40); c.closePath(); });
+
+  // Smirk with teeth: lower lip drops as it talks
+  const open = 12 + face.mouth * 78;
+  const mouth = c => {
+    c.moveTo(cx-150, cy+110);
+    c.lineTo(cx-95, cy+124); c.lineTo(cx-70, cy+106); c.lineTo(cx-40, cy+126);   // top teeth notches
+    c.quadraticCurveTo(cx+60, cy+128, cx+165, cy+70);
+    c.quadraticCurveTo(cx+40, cy+128 + open*1.5, cx-150, cy+110);
+    c.closePath();
+  };
+  carve(mouth);
+  if (face.mouth > .2) shade(c => c.rect(cx+30, cy+108, 28, 6 + face.mouth*30), "#6e2604");   // snaggle tooth
+}
+
+/* ---------- Scene ---------- */
+const canvasEl = document.getElementById("three");
+const renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+renderer.outputEncoding = THREE.sRGBEncoding;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, .1, 100);
+
+const colorTex = new THREE.CanvasTexture(colorCv); colorTex.encoding = THREE.sRGBEncoding; colorTex.anisotropy = 4;
+const glowTex  = new THREE.CanvasTexture(glowCv);  glowTex.encoding = THREE.sRGBEncoding;
+
+const geo = new THREE.SphereGeometry(1, 192, 120);
+const P = geo.attributes.position, UV = geo.attributes.uv;
+for (let i = 0; i < P.count; i++){
+  const a = UV.getX(i) * Math.PI * 2, y0 = P.getY(i);
+  const groove = Math.pow(Math.abs(Math.sin(a * 5)), 5);              // 10 deep ribs, face sits between two
+  const lump = .012 * Math.sin(a * 23 + y0 * 6) + .01 * Math.sin(a * 7 - y0 * 9);
+  const r = 1 - .1 * groove * (1 - Math.pow(Math.abs(y0), 3)) + lump;
+  let y = y0 * .8;
+  y -= .1 * Math.pow(Math.max(0, y0), 10);                            // dimple at the stem
+  y += .06 * Math.pow(Math.max(0, -y0), 10);                          // flatter bottom
+  P.setXYZ(i, P.getX(i) * r * 1.08, y, P.getZ(i) * r);
+}
+geo.computeVertexNormals();
+
+const mat = new THREE.MeshStandardMaterial({
+  map: colorTex, emissiveMap: glowTex, emissive: new THREE.Color(0xffffff), emissiveIntensity: 1.3, roughness: .55, metalness: 0
+});
+const pumpkin = new THREE.Group();
+pumpkin.add(new THREE.Mesh(geo, mat));
+
+// Crooked stem
+const stemGeo = new THREE.CylinderGeometry(.065, .13, .46, 9, 10);
+const sp = stemGeo.attributes.position;
+for (let i = 0; i < sp.count; i++){ const y = sp.getY(i) + .23; sp.setX(i, sp.getX(i) + y*y*.9); sp.setZ(i, sp.getZ(i) + Math.sin(y*6)*.02); }
+stemGeo.computeVertexNormals();
+const stem = new THREE.Mesh(stemGeo, new THREE.MeshStandardMaterial({ color: 0x55602a, roughness: .95, flatShading: true }));
+stem.position.set(0, .86, 0); stem.rotation.z = .15;
+pumpkin.add(stem);
+
+// Curly vine
+const vinePts = [];
+for (let i = 0; i <= 40; i++){ const t = i/40; vinePts.push(new THREE.Vector3(-.05 - t*.5 + Math.cos(t*12)*.08*t, .8 + Math.sin(t*12)*.08*t + t*.05, .05 + Math.sin(t*10)*.1*t)); }
+const vine = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(vinePts), 80, .012, 6), new THREE.MeshStandardMaterial({ color: 0x6f8a35, roughness: .8 }));
+pumpkin.add(vine);
+
+// Glow halo in front of the face
+function radialTex(inner, outer){
+  const c = document.createElement("canvas"); c.width = c.height = 128; const x = c.getContext("2d");
+  const g = x.createRadialGradient(64,64,0,64,64,64); g.addColorStop(0, inner); g.addColorStop(1, outer);
+  x.fillStyle = g; x.fillRect(0,0,128,128); return new THREE.CanvasTexture(c);
+}
+const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialTex("rgba(255,170,60,.55)","rgba(255,120,20,0)"), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+halo.scale.set(2.1, 1.6, 1); halo.position.set(0, -.05, .7);
+pumpkin.add(halo);
+scene.add(pumpkin);
+
+// Warm pool of light on the floor
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 4.5), new THREE.MeshBasicMaterial({ map: radialTex("rgba(255,130,40,.45)","rgba(0,0,0,0)"), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+floor.rotation.x = -Math.PI/2; floor.position.y = -.84; scene.add(floor);
+const shadow = new THREE.Mesh(new THREE.CircleGeometry(.95, 48), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .4 }));
+shadow.rotation.x = -Math.PI/2; shadow.position.y = -.835; scene.add(shadow);
+
+// Rising embers
+const EMBERS = 140, ePos = new Float32Array(EMBERS*3), eSpd = new Float32Array(EMBERS);
+for (let i = 0; i < EMBERS; i++){ ePos[i*3] = (Math.random()-.5)*4; ePos[i*3+1] = Math.random()*3 - 1; ePos[i*3+2] = (Math.random()-.5)*2 - .3; eSpd[i] = .1 + Math.random()*.35; }
+const eGeo = new THREE.BufferGeometry(); eGeo.setAttribute("position", new THREE.BufferAttribute(ePos, 3));
+const embers = new THREE.Points(eGeo, new THREE.PointsMaterial({ size: .035, map: radialTex("rgba(255,220,140,1)","rgba(255,120,20,0)"), color: 0xffa040, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+scene.add(embers);
+
+scene.add(new THREE.AmbientLight(0x2c1d3d, 1.2));
+const keyL = new THREE.SpotLight(0xffe0bd, 2.2, 12, .5, .6); keyL.position.set(-.6, 5, 4); scene.add(keyL);
+const rimL = new THREE.DirectionalLight(0xa76bff, 1.6); rimL.position.set(3, 1.5, -2.5); scene.add(rimL);
+const rimL2 = new THREE.DirectionalLight(0xff5a8a, .5); rimL2.position.set(-3, .5, -2); scene.add(rimL2);
+
+function resize(){
+  const w = canvasEl.clientWidth, h = canvasEl.clientHeight, pr = renderer.getPixelRatio();
+  if (canvasEl.width !== Math.floor(w*pr) || canvasEl.height !== Math.floor(h*pr)){
+    renderer.setSize(w, h, false); camera.aspect = w / h;
+    const narrow = w < 700;
+    camera.position.set(0, .3, narrow ? 5.4 : 6.1);
+    camera.lookAt(0, narrow ? .05 : .12, 0);
+    camera.updateProjectionMatrix();
+  }
+}
+
+const mouse = { x: 0, y: 0 };
+window.addEventListener("pointermove", e => { mouse.x = e.clientX / innerWidth - .5; mouse.y = e.clientY / innerHeight - .5; });
+
+const state = { talking: false, thinking: false, pulse: 0 };
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const t0 = performance.now(); let last = t0;
+function loop(now){
+  const t = (now - t0) / 1000, dt = Math.min(.05, (now - last) / 1000); last = now;
+  resize();
+
+  let target = 0;
+  if (state.talking){ state.pulse *= .88; target = Math.min(1, .2 + .55*Math.abs(Math.sin(t*16))*(.6+.4*Math.sin(t*4.7)) + state.pulse); }
+  face.mouth += (target - face.mouth) * .35;
+
+  let px, py = 0;
+  if (state.thinking){ px = Math.sin(t*5.5); py = Math.cos(t*3.7)*.6; }
+  else if (state.talking){ px = mouse.x*1.6; py = mouse.y; }
+  else { px = .7 + Math.sin(t*.6)*.25; }
+  face.pupilX += (px - face.pupilX)*.15; face.pupilY += (py - face.pupilY)*.15;
+  face.brow += ((state.talking ? .6 + .4*Math.sin(t*2.6) : state.thinking ? .3 : 0) - face.brow)*.1;
+  face.lid  += ((state.talking ? .5 : 0) - face.lid)*.1;
+
+  drawFace(); colorTex.needsUpdate = true; glowTex.needsUpdate = true;
+
+  const flick = reduced ? 0 : (.16*Math.sin(t*13)*Math.sin(t*7.3) + .06*Math.sin(t*31));
+  mat.emissiveIntensity = 1.25 + flick + (state.talking ? .25 : 0);
+  halo.material.opacity = .8 + flick*1.5 + (state.talking ? .2 : 0);
+  floor.material.opacity = .85 + flick;
+
+  const m = reduced ? 0 : 1;
+  pumpkin.rotation.y = (-.1 + mouse.x*.55 + Math.sin(t*.5)*.07) * m;
+  pumpkin.rotation.x = (mouse.y*.22) * m;
+  pumpkin.position.y = (state.talking ? Math.abs(Math.sin(t*7))*.035 : Math.sin(t*1.1)*.015) * m;
+  pumpkin.rotation.z = state.thinking && m ? Math.sin(t*2.2)*.07 : pumpkin.rotation.z*.9;
+  const sq = state.talking && m ? 1 + Math.sin(t*14)*.012 : 1;
+  pumpkin.scale.set(1/sq, sq, 1/sq);
+
+  if (!reduced){
+    const a = eGeo.attributes.position.array;
+    for (let i = 0; i < EMBERS; i++){
+      a[i*3+1] += eSpd[i]*dt*(state.talking ? 1.8 : 1);
+      a[i*3]   += Math.sin(t*1.3 + i)*dt*.08;
+      if (a[i*3+1] > 2.2){ a[i*3+1] = -.9; a[i*3] = (Math.random()-.5)*3; }
+    }
+    eGeo.attributes.position.needsUpdate = true;
+  }
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* =========================================================
+   BUBBLES, VOICE, CAMERA, CHAT
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+// Private setup link: opening the page with #key=YOUR_KEY saves the key in this browser, then wipes it from the address bar.
+(function(){
+  const m = location.hash.match(/^#key=([^&]+)/);
+  if (m){ store.set("jp_key", decodeURIComponent(m[1]).trim()); try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){ location.hash = ""; } }
+})();
+$("key").value = store.get("jp_key", "");
+$("model").value = store.get("jp_model", "");
+$("voice").checked = store.get("jp_voice", true);
+$("key").addEventListener("change", e => store.set("jp_key", e.target.value.trim()));
+$("model").addEventListener("change", e => store.set("jp_model", e.target.value.trim()));
+$("voice").addEventListener("change", e => { store.set("jp_voice", e.target.checked); syncSound(); });
+function syncSound(){
+  const on = $("voice").checked;
+  $("sound").classList.toggle("muted", !on);
+  $("sound-toggle").textContent = on ? "Mute pumpkin" : "Unmute pumpkin";
+  $("sound-text").innerHTML = on ? "Turn your volume up! <span>This pumpkin roasts you out loud.</span>" : "The pumpkin is muted. <span>Roasts will only show in bubbles.</span>";
+}
+$("sound-toggle").onclick = () => {
+  $("voice").checked = !$("voice").checked; store.set("jp_voice", $("voice").checked);
+  if (!$("voice").checked && "speechSynthesis" in window) speechSynthesis.cancel();
+  syncSound();
+};
+$("sound-ok").onclick = () => { $("sound").hidden = true; };
+syncSound();
+
+function setStatus(){
+  document.body.classList.toggle("thinking", state.thinking);
+  document.body.classList.toggle("talking", state.talking);
+  $("status-text").textContent = state.thinking ? "Judging…" : state.talking ? "Roasting" : "Watching you";
+  $("thought").hidden = $("puffs").hidden = !state.thinking;
+  $("bubble").hidden = state.thinking;
+}
+
+let voice = null;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  voice = vs.find(v => /^en/i.test(v.lang) && /(daniel|fred|ralph|google uk english male|male|alex)/i.test(v.name)) || vs.find(v => /^en/i.test(v.lang)) || null;
+}
+if ("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+
+let typeTimer = null;
+function showBubble(text, kind){
+  const b = $("bubble"), out = $("bubble-text");
+  b.classList.toggle("upgrade", kind === "upgrade");
+  $("bubble-who").textContent = kind === "upgrade" ? "Costume upgrade" : "Judgy Pumpkin";
+  b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop", "typing");
+  let shown = 0, spoken = 0;
+  out.textContent = "";
+  clearInterval(typeTimer);
+  const step = () => {
+    shown = Math.min(text.length, Math.max(shown + 1, spoken));
+    out.textContent = text.slice(0, shown);
+    b.scrollTop = b.scrollHeight;
+    if (shown >= text.length){ clearInterval(typeTimer); b.classList.remove("typing"); }
+  };
+  typeTimer = setInterval(step, 28);
+  return { sync(i){ spoken = i; }, finish(){ spoken = text.length; } };
+}
+
+function speak(text, kind){
+  const typer = showBubble(text, kind);
+  const spokenText = text.replace(/^\s*-\s*/gm, "");
+  if (!$("voice").checked || !("speechSynthesis" in window)){
+    state.talking = true; setStatus();
+    setTimeout(() => { state.talking = false; setStatus(); typer.finish(); }, Math.min(10000, 55 * text.length));
+    return;
+  }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(spokenText);
+  if (voice) u.voice = voice;
+  u.pitch = .5; u.rate = 1.03;
+  u.onstart = () => { state.talking = true; setStatus(); };
+  u.onboundary = e => { state.pulse = .35; };
+  u.onend = u.onerror = () => { state.talking = false; setStatus(); typer.finish(); };
+  speechSynthesis.speak(u);
+}
+
+/* Camera */
+let stream = null;
+$("cam-btn").onclick = async () => {
+  if (stream){
+    stream.getTracks().forEach(tr => tr.stop()); stream = null;
+    $("video").hidden = true; $("rec").hidden = true; $("cam-off").hidden = false; return;
+  }
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 960 }, audio: false });
+    $("video").srcObject = stream; $("video").hidden = false; $("rec").hidden = false; $("cam-off").hidden = true;
+  }catch(e){
+    addMsg("system", "The camera didn't turn on. Allow camera access in your browser, or type a description of your costume.", true);
+  }
+};
+function snapshot(){
+  const v = $("video");
+  if (!stream || !v.videoWidth) return null;
+  const c = $("snap"), s = Math.min(1, 768 / v.videoWidth);
+  c.width = Math.round(v.videoWidth*s); c.height = Math.round(v.videoHeight*s);
+  const x = c.getContext("2d"); x.setTransform(-1,0,0,1,c.width,0); x.drawImage(v, 0, 0, c.width, c.height);
+  return c.toDataURL("image/jpeg", .8);
+}
+
+/* Transcript */
+let history = [], cleared = false;
+function addMsg(who, text, isError, image, kind){
+  if (!cleared){ cleared = true; $("log").innerHTML = ""; }
+  const el = document.createElement("div");
+  el.className = "msg " + who + (isError ? " error" : "") + (kind === "upgrade" ? " upgrade" : "");
+  if (image){ const im = document.createElement("img"); im.src = image; im.alt = "Costume photo"; el.appendChild(im); }
+  el.appendChild(document.createTextNode(text));
+  $("log").appendChild(el); $("log").scrollTop = $("log").scrollHeight;
+}
+
+/* Brain */
+const SYSTEM = `You are JUDGY PUMPKIN: a glowing carved jack-o'-lantern with a permanently judgmental face, side-eye, one raised eyebrow and a smirk. You preside over a Halloween costume contest, roasting people's costumes out loud. Your words appear in comic speech bubbles and are spoken by a 3D pumpkin.
+Voice: savage but playful, like a comedy roast where the target laughs hardest. Pumpkin and Halloween wordplay welcome. Be specific about what you actually see or are told: the concept, materials, effort, missing details, how committed they are.
+Hard rules: Judge the COSTUME and their choices only. Never comment on anyone's body, face, weight, height, skin, hair texture, age, race, gender, disability or attractiveness. No profanity or slurs. If someone seems genuinely hurt, ease up and say something kind.
+Roasts: 1 to 3 short sentences, under 55 words, plain text, no emojis.
+When asked to suggest a better costume: open with one short sassy line, then exactly 3 ideas, each on its own line starting with "- ", each a catchy costume name, a colon, and how to pull it off cheaply, ideally reusing what they're already wearing. Under 85 words total.
+If you can't see or don't know a costume, roast them for showing up without one. Keep the bit going when people talk back.`;
+
+const DEMO_ROAST = [
+  "Ah yes, a costume. I've seen more effort from a pumpkin spice candle, and at least it commits to the bit.",
+  "Bold choice. Wrong, but bold. This looks like it was assembled in the four minutes before you left the house.",
+  "I was hollowed out with a spoon and I still have more structure than that costume.",
+  "You didn't dress up, you dressed sideways. Still, points for walking in here with this much confidence.",
+  "Is that a costume or a cry for help? Either way, the judges heard it.",
+  "My stem has more personality. But I'll admit the effort is almost visible from here."
+];
+const DEMO_UPGRADE = [
+  "Fine. I'll fix this tragedy.\n- Haunted houseplant: green clothes, a pot as a belt, and fake cobwebs in your hair.\n- Sleepy ghost: a white sheet, eye holes, and a pillow under your arm.\n- Lost tourist zombie: fake blood, a fanny pack, and a map held upside down.",
+  "Let's salvage what we can.\n- Vampire dentist: any dark outfit, a cape, and giant floss.\n- Pumpkin's ex: orange shirt, a fake stem headband, and a sign that says \"it's not me, it's my seeds.\"\n- Witch on vacation: pointy hat, sunglasses, and a pool float broom."
+];
+
+/* ====== PASTE YOUR CLOUDFLARE WORKER URL BETWEEN THE QUOTES ======
+   Example: const PROXY_URL = "https://judgy-pumpkin.yourname.workers.dev";
+   With this set, visitors get real roasts without ever seeing your key. */
+const PROXY_URL = "";
+
+/* ====== OR PASTE YOUR GEMINI KEY BETWEEN THE QUOTES ======
+   Example: const BUILT_IN_KEY = "AIza...";
+   Anyone who views the page source can see this key. */
+const BUILT_IN_KEY = "AQ.Ab8RN6I8hVCYZdcG9pTUt1b-JX7eCG5iEiaHv-zqfYQ1raeUug";
+
+const MAX_TURNS = 12;
+function wait(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+const OPENAI_MODELS = ["gpt-4o-mini", "gpt-4.1-mini", "gpt-5-mini", "gpt-4o"];
+const GEMINI_MODELS = ["gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"];
+let workingOpenAI = null, workingGemini = null;
+
+async function askOpenAI(key){
+  const msgs = [{ role: "system", content: SYSTEM }];
+  history.slice(-MAX_TURNS).forEach((m, i, arr) => {
+    if (m.role === "user" && m.image && i === arr.length - 1)
+      msgs.push({ role: "user", content: [{ type: "text", text: m.text }, { type: "image_url", image_url: { url: m.image } }] });
+    else msgs.push({ role: m.role, content: m.image ? m.text + " [photo attached earlier]" : m.text });
+  });
+  const chosen = $("model").value.trim();
+  const order = chosen ? [chosen] : (workingOpenAI ? [workingOpenAI] : OPENAI_MODELS);
+  let lastErr = "No model answered.";
+  for (const model of order){
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+      body: JSON.stringify({ model, messages: msgs, max_completion_tokens: 1200 })
+    });
+    if (res.ok){
+      const data = await res.json();
+      const text = (data.choices?.[0]?.message?.content || "").trim();
+      if (text){ workingOpenAI = model; return text; }
+      lastErr = "The model returned an empty answer."; continue;
+    }
+    try{ lastErr = (await res.json()).error.message; }catch(e){ lastErr = "Request failed (" + res.status + ")"; }
+    if (res.status === 401 || res.status === 429) break;
+  }
+  throw new Error(lastErr);
+}
+
+async function askGemini(key){
+  const contents = history.slice(-MAX_TURNS).map((m, i, arr) => {
+    const parts = [{ text: m.image && i !== arr.length - 1 ? m.text + " [photo attached earlier]" : m.text }];
+    if (m.role === "user" && m.image && i === arr.length - 1) parts.push({ inline_data: { mime_type: "image/jpeg", data: m.image.split(",")[1] } });
+    return { role: m.role === "assistant" ? "model" : "user", parts };
+  });
+  while (contents.length && contents[0].role !== "user") contents.shift();
+  const body = JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM }] }, contents, generationConfig: { temperature: 1, maxOutputTokens: 1024 } });
+  const chosen = $("model").value.trim();
+  const order = chosen ? [chosen] : (workingGemini ? [workingGemini] : GEMINI_MODELS);
+  let lastErr = "No model answered.";
+  for (const model of order){
+    const res = key
+      ? await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+          method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body })
+      : await fetch(PROXY_URL.replace(/\/$/, "") + "/?model=" + encodeURIComponent(model), {
+          method: "POST", headers: { "Content-Type": "application/json" }, body });
+    if (res.ok){
+      const data = await res.json();
+      const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
+      if (text){ workingGemini = model; return text; }
+      lastErr = "The model returned an empty answer."; continue;
+    }
+    try{ lastErr = (await res.json()).error.message; }catch(e){ lastErr = "Request failed (" + res.status + ")"; }
+    if ((res.status === 400 && /api key/i.test(lastErr)) || res.status === 401 || res.status === 403 || res.status === 500) break;
+  }
+  throw new Error(lastErr);
+}
+
+async function askPumpkin(kind){
+  const key = $("key").value.trim() || BUILT_IN_KEY.trim();
+  if (!key && PROXY_URL) return askGemini(null);
+  if (!key){
+    await wait(1100);
+    const pool = kind === "upgrade" ? DEMO_UPGRADE : DEMO_ROAST;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  return key.startsWith("sk-") ? askOpenAI(key) : askGemini(key);
+}
+
+let busy = false, demoNoted = false;
+async function send(text, opts = {}){
+  if (busy) return;
+  const image = opts.photo ? snapshot() : null;
+  if (opts.photo && !image && !history.some(m => m.image)) addMsg("system", "Camera is off, so the pumpkin is judging blind. Tap the camera box to let it see you.");
+  addMsg("user", text, false, image);
+  history.push({ role: "user", text, image });
+  if (!$("key").value.trim() && !BUILT_IN_KEY.trim() && !PROXY_URL && !demoNoted){ demoNoted = true; addMsg("system", "Demo mode: add a free Gemini key in Settings for real roasts."); }
+  busy = true; $("roast-btn").disabled = $("upgrade-btn").disabled = true;
+  state.thinking = true; setStatus();
+  try{
+    const reply = await askPumpkin(opts.kind);
+    history.push({ role: "assistant", text: reply });
+    state.thinking = false; setStatus();
+    addMsg("pumpkin", reply, false, null, opts.kind);
+    speak(reply, opts.kind);
+  }catch(e){
+    state.thinking = false; setStatus();
+    const net = e instanceof TypeError || /failed to fetch|load failed|networkerror/i.test(e.message);
+    addMsg("system", net
+      ? "The pumpkin couldn't reach the AI service. If the page is open in a preview window, download judgy-pumpkin.html and open it in Chrome. Also check that you're online."
+      : "The AI service said: " + e.message, true);
+    showBubble("My pumpkin brain just short-circuited. Check the key in Settings and try again.");
+  }finally{
+    busy = false; $("roast-btn").disabled = $("upgrade-btn").disabled = false;
+  }
+}
+
+$("roast-btn").onclick = () => send("Roast my costume.", { photo: true, kind: "roast" });
+$("upgrade-btn").onclick = () => send("Suggest a better costume for me.", { photo: true, kind: "upgrade" });
+$("form").onsubmit = e => {
+  e.preventDefault();
+  const v = $("input").value.trim(); if (!v) return;
+  $("input").value = "";
+  send(v, { kind: /better costume|what should i (be|wear)|suggest|ideas?/i.test(v) ? "upgrade" : "roast" });
+};
+$("clear").onclick = () => {
+  history = []; cleared = true; $("log").innerHTML = "";
+  speak("Next victim. I mean, contestant.");
+};
+</script>
+</body>
+</html>
